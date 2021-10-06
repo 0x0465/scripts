@@ -1,27 +1,37 @@
 #!/bin/bash
 
-# Autor: pdrzew
-# Skrypt sprawdzający jakość IP w bazie danych ABUSEIPDB po dostarczeniu pliku wyciągniętego z RouterOS
+#
+# Author: pdrzew
+#
 
 api="{EDITED}"
+
+# SSH to router, save connections to file
 file=router.txt
 ssh {EDITED} ip firewall connection print > $file
 
-# wyodrębniamy IPki z pliku z Routerosa
+# Process file router.txt, sort and uniq IPs
 awk -F: '{ print $2 }' $file | awk -F' ' '{ print $2 }' | sort | uniq > ip.txt
 lines=$(cat ip.txt)
 
-# pokaż ilość IP w pliku
-echo "IP count:" 
-cat ip.txt | wc -l
+# Show number of unique IPs
+echo "IP count:"
+wc -l < ip.txt
 echo ""
 
-# pętla sprawdzająca IPki
-for line in $lines 
+echo -e "Score \t : IP \t \t \t : ISP"
+# Loop through IPs
+for line in $lines
     do
-	score=$(curl -G https://api.abuseipdb.com/api/v2/check --data-urlencode "ipAddress=$line" -H "Key: $api" -H "Accept: application/json" 2>/dev/null | jq -r '.data.abuseConfidenceScore')
-	if [[ $score -ne "0" ]] 
+# Curl to AbuseIPDB, save to file
+        json=$(curl -G https://api.abuseipdb.com/api/v2/check --data-urlencode "ipAddress=$line" -H "Key: $api" -H "Accept: application/json" 2>/dev/null)
+        echo "$json" > json.txt
+# Extract usable fields from file
+        score=$(jq -r '.data.abuseConfidenceScore' json.txt)
+        isp=$(jq -r '.data.isp' json.txt)
+# Loop: If IPs score > 0, print score, IP and ISP name.
+        if [[ $score -ne "0" ]]
         then
-	   echo -e "$score \t : $line"
-	fi
+           echo -e "$score \t : $line \t : $isp"
+        fi
     done
