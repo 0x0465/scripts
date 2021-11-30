@@ -1,7 +1,7 @@
 #!/bin/bash
 
-downloads=/mnt/c/Users/XXX/Downloads
-documents=/mnt/c/Users/XXX/Documents
+downloads=/mnt/c/Users/pdrzew/Downloads
+documents=/mnt/c/Users/pdrzew/Documents
 
 function clear_files(){
 	echo $1 > nazwa.txt
